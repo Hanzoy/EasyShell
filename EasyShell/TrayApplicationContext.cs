@@ -41,7 +41,8 @@ internal sealed class TrayApplicationContext : ApplicationContext
         try
         {
             var path = ExplorerPathResolver.GetForegroundExplorerPath();
-            TerminalLauncher.Launch(_config.TerminalTargetId, path, asAdministrator);
+            var terminalTargetId = ResolveTerminalTargetForPath(path);
+            TerminalLauncher.Launch(terminalTargetId, path, asAdministrator);
         }
         catch (Exception ex)
         {
@@ -64,6 +65,8 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _config = new AppConfig
         {
             TerminalTargetId = form.TerminalTargetId,
+            UseGitDirectoryTerminal = form.UseGitDirectoryTerminal,
+            GitDirectoryTerminalTargetId = form.GitDirectoryTerminalTargetId,
             Hotkey = form.HotkeyText,
             AdminHotkey = form.AdminHotkeyText,
             StartWithWindows = form.StartWithWindows
@@ -82,6 +85,16 @@ internal sealed class TrayApplicationContext : ApplicationContext
             RegisterConfiguredHotkeys(showFailure: true, throwOnFailure: false);
             ShowError(ex.Message);
         }
+    }
+
+    private string ResolveTerminalTargetForPath(string path)
+    {
+        if (_config.UseGitDirectoryTerminal && GitDirectoryDetector.IsInGitDirectory(path))
+        {
+            return _config.GitDirectoryTerminalTargetId;
+        }
+
+        return _config.TerminalTargetId;
     }
 
     private void RegisterConfiguredHotkeys(bool showFailure, bool throwOnFailure = false)

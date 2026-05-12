@@ -3,12 +3,16 @@ namespace EasyShell;
 internal sealed class SettingsForm : Form
 {
     private readonly ComboBox _terminalCombo = new();
+    private readonly CheckBox _useGitDirectoryTerminalCheck = new();
+    private readonly ComboBox _gitDirectoryTerminalCombo = new();
     private readonly TextBox _hotkeyText = new();
     private readonly TextBox _adminHotkeyText = new();
     private readonly CheckBox _startWithWindowsCheck = new();
     private readonly Label _errorLabel = new();
 
     public string TerminalTargetId => ((TerminalTarget)_terminalCombo.SelectedItem!).Id;
+    public bool UseGitDirectoryTerminal => _useGitDirectoryTerminalCheck.Checked;
+    public string GitDirectoryTerminalTargetId => ((TerminalTarget)_gitDirectoryTerminalCombo.SelectedItem!).Id;
     public string HotkeyText => _hotkeyText.Text.Trim();
     public string AdminHotkeyText => _adminHotkeyText.Text.Trim();
     public bool StartWithWindows => _startWithWindowsCheck.Checked;
@@ -21,7 +25,7 @@ internal sealed class SettingsForm : Form
         MinimizeBox = false;
         ShowInTaskbar = false;
         StartPosition = FormStartPosition.CenterScreen;
-        ClientSize = new Size(520, 258);
+        ClientSize = new Size(520, 338);
 
         var terminalLabel = new Label
         {
@@ -30,26 +34,39 @@ internal sealed class SettingsForm : Form
             Location = new Point(20, 22)
         };
 
-        _terminalCombo.DropDownStyle = ComboBoxStyle.DropDownList;
-        _terminalCombo.DisplayMember = nameof(TerminalTarget.DisplayName);
-        _terminalCombo.ValueMember = nameof(TerminalTarget.Id);
         var targets = TerminalTargets.GetAvailableTargets();
-        _terminalCombo.Items.AddRange(targets.Cast<object>().ToArray());
-        _terminalCombo.SelectedItem = targets.FirstOrDefault(target => string.Equals(target.Id, config.TerminalTargetId, StringComparison.OrdinalIgnoreCase))
-            ?? targets.First(target => target.Id == TerminalTargets.PowerShellId);
+        ConfigureTerminalCombo(_terminalCombo, targets, config.TerminalTargetId, TerminalTargets.PowerShellId);
         _terminalCombo.Location = new Point(105, 18);
         _terminalCombo.Width = 380;
         _terminalCombo.DropDownWidth = 460;
+
+        _useGitDirectoryTerminalCheck.AutoSize = true;
+        _useGitDirectoryTerminalCheck.Text = "Git 目录使用额外终端";
+        _useGitDirectoryTerminalCheck.Checked = config.UseGitDirectoryTerminal;
+        _useGitDirectoryTerminalCheck.Location = new Point(105, 58);
+        _useGitDirectoryTerminalCheck.CheckedChanged += (_, _) => UpdateGitDirectoryTerminalState();
+
+        var gitDirectoryTerminalLabel = new Label
+        {
+            AutoSize = true,
+            Text = "额外终端",
+            Location = new Point(20, 96)
+        };
+
+        ConfigureTerminalCombo(_gitDirectoryTerminalCombo, targets, config.GitDirectoryTerminalTargetId, TerminalTargets.GitBashId);
+        _gitDirectoryTerminalCombo.Location = new Point(105, 92);
+        _gitDirectoryTerminalCombo.Width = 380;
+        _gitDirectoryTerminalCombo.DropDownWidth = 460;
 
         var hotkeyLabel = new Label
         {
             AutoSize = true,
             Text = "普通快捷键",
-            Location = new Point(20, 68)
+            Location = new Point(20, 148)
         };
 
         _hotkeyText.Text = config.Hotkey;
-        _hotkeyText.Location = new Point(105, 64);
+        _hotkeyText.Location = new Point(105, 144);
         _hotkeyText.Width = 220;
         _hotkeyText.KeyDown += HotkeyTextOnKeyDown;
 
@@ -57,29 +74,29 @@ internal sealed class SettingsForm : Form
         {
             AutoSize = true,
             Text = "管理员快捷键",
-            Location = new Point(20, 108)
+            Location = new Point(20, 188)
         };
 
         _adminHotkeyText.Text = config.AdminHotkey;
-        _adminHotkeyText.Location = new Point(105, 104);
+        _adminHotkeyText.Location = new Point(105, 184);
         _adminHotkeyText.Width = 220;
         _adminHotkeyText.KeyDown += HotkeyTextOnKeyDown;
 
         _startWithWindowsCheck.AutoSize = true;
         _startWithWindowsCheck.Text = "开机自启";
         _startWithWindowsCheck.Checked = config.StartWithWindows;
-        _startWithWindowsCheck.Location = new Point(105, 144);
+        _startWithWindowsCheck.Location = new Point(105, 224);
 
         _errorLabel.AutoSize = false;
         _errorLabel.ForeColor = Color.Firebrick;
-        _errorLabel.Location = new Point(105, 170);
+        _errorLabel.Location = new Point(105, 250);
         _errorLabel.Size = new Size(380, 34);
 
         var saveButton = new Button
         {
             DialogResult = DialogResult.OK,
             Text = "保存",
-            Location = new Point(329, 216),
+            Location = new Point(329, 296),
             Size = new Size(75, 28)
         };
         saveButton.Click += SaveButtonOnClick;
@@ -88,13 +105,14 @@ internal sealed class SettingsForm : Form
         {
             DialogResult = DialogResult.Cancel,
             Text = "取消",
-            Location = new Point(410, 216),
+            Location = new Point(410, 296),
             Size = new Size(75, 28)
         };
 
-        Controls.AddRange([terminalLabel, _terminalCombo, hotkeyLabel, _hotkeyText, adminHotkeyLabel, _adminHotkeyText, _startWithWindowsCheck, _errorLabel, saveButton, cancelButton]);
+        Controls.AddRange([terminalLabel, _terminalCombo, _useGitDirectoryTerminalCheck, gitDirectoryTerminalLabel, _gitDirectoryTerminalCombo, hotkeyLabel, _hotkeyText, adminHotkeyLabel, _adminHotkeyText, _startWithWindowsCheck, _errorLabel, saveButton, cancelButton]);
         AcceptButton = saveButton;
         CancelButton = cancelButton;
+        UpdateGitDirectoryTerminalState();
     }
 
     protected override void OnShown(EventArgs e)
@@ -130,6 +148,23 @@ internal sealed class SettingsForm : Form
         _hotkeyText.Text = hotkey.DisplayText;
         _adminHotkeyText.Text = adminHotkey.DisplayText;
         _errorLabel.Text = string.Empty;
+    }
+
+    private static void ConfigureTerminalCombo(ComboBox comboBox, IReadOnlyList<TerminalTarget> targets, string selectedId, string fallbackId)
+    {
+        comboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+        comboBox.DisplayMember = nameof(TerminalTarget.DisplayName);
+        comboBox.ValueMember = nameof(TerminalTarget.Id);
+        comboBox.Items.AddRange(targets.Cast<object>().ToArray());
+
+        comboBox.SelectedItem = targets.FirstOrDefault(target => string.Equals(target.Id, selectedId, StringComparison.OrdinalIgnoreCase))
+            ?? targets.FirstOrDefault(target => target.Id == fallbackId)
+            ?? targets.First(target => target.Id == TerminalTargets.PowerShellId);
+    }
+
+    private void UpdateGitDirectoryTerminalState()
+    {
+        _gitDirectoryTerminalCombo.Enabled = _useGitDirectoryTerminalCheck.Checked;
     }
 
     private void HotkeyTextOnKeyDown(object? sender, KeyEventArgs e)

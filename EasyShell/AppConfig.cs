@@ -11,6 +11,8 @@ internal sealed class AppConfig
     public string Hotkey { get; set; } = "Ctrl+Space";
     public string AdminHotkey { get; set; } = "Ctrl+Shift+Space";
     public bool StartWithWindows { get; set; }
+    public bool UseGitDirectoryTerminal { get; set; }
+    public string GitDirectoryTerminalTargetId { get; set; } = TerminalTargets.GitBashId;
 
     public static string ConfigDirectory =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EasyShell");
