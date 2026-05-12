@@ -4,11 +4,13 @@ internal sealed class SettingsForm : Form
 {
     private readonly ComboBox _terminalCombo = new();
     private readonly TextBox _hotkeyText = new();
+    private readonly TextBox _adminHotkeyText = new();
     private readonly CheckBox _startWithWindowsCheck = new();
     private readonly Label _errorLabel = new();
 
     public string TerminalTargetId => ((TerminalTarget)_terminalCombo.SelectedItem!).Id;
     public string HotkeyText => _hotkeyText.Text.Trim();
+    public string AdminHotkeyText => _adminHotkeyText.Text.Trim();
     public bool StartWithWindows => _startWithWindowsCheck.Checked;
 
     public SettingsForm(AppConfig config)
@@ -19,7 +21,7 @@ internal sealed class SettingsForm : Form
         MinimizeBox = false;
         ShowInTaskbar = false;
         StartPosition = FormStartPosition.CenterScreen;
-        ClientSize = new Size(520, 218);
+        ClientSize = new Size(520, 258);
 
         var terminalLabel = new Label
         {
@@ -42,7 +44,7 @@ internal sealed class SettingsForm : Form
         var hotkeyLabel = new Label
         {
             AutoSize = true,
-            Text = "快捷键",
+            Text = "普通快捷键",
             Location = new Point(20, 68)
         };
 
@@ -51,21 +53,33 @@ internal sealed class SettingsForm : Form
         _hotkeyText.Width = 220;
         _hotkeyText.KeyDown += HotkeyTextOnKeyDown;
 
+        var adminHotkeyLabel = new Label
+        {
+            AutoSize = true,
+            Text = "管理员快捷键",
+            Location = new Point(20, 108)
+        };
+
+        _adminHotkeyText.Text = config.AdminHotkey;
+        _adminHotkeyText.Location = new Point(105, 104);
+        _adminHotkeyText.Width = 220;
+        _adminHotkeyText.KeyDown += HotkeyTextOnKeyDown;
+
         _startWithWindowsCheck.AutoSize = true;
         _startWithWindowsCheck.Text = "开机自启";
         _startWithWindowsCheck.Checked = config.StartWithWindows;
-        _startWithWindowsCheck.Location = new Point(105, 104);
+        _startWithWindowsCheck.Location = new Point(105, 144);
 
         _errorLabel.AutoSize = false;
         _errorLabel.ForeColor = Color.Firebrick;
-        _errorLabel.Location = new Point(105, 130);
+        _errorLabel.Location = new Point(105, 170);
         _errorLabel.Size = new Size(380, 34);
 
         var saveButton = new Button
         {
             DialogResult = DialogResult.OK,
             Text = "保存",
-            Location = new Point(329, 176),
+            Location = new Point(329, 216),
             Size = new Size(75, 28)
         };
         saveButton.Click += SaveButtonOnClick;
@@ -74,11 +88,11 @@ internal sealed class SettingsForm : Form
         {
             DialogResult = DialogResult.Cancel,
             Text = "取消",
-            Location = new Point(410, 176),
+            Location = new Point(410, 216),
             Size = new Size(75, 28)
         };
 
-        Controls.AddRange([terminalLabel, _terminalCombo, hotkeyLabel, _hotkeyText, _startWithWindowsCheck, _errorLabel, saveButton, cancelButton]);
+        Controls.AddRange([terminalLabel, _terminalCombo, hotkeyLabel, _hotkeyText, adminHotkeyLabel, _adminHotkeyText, _startWithWindowsCheck, _errorLabel, saveButton, cancelButton]);
         AcceptButton = saveButton;
         CancelButton = cancelButton;
     }
@@ -92,15 +106,30 @@ internal sealed class SettingsForm : Form
 
     private void SaveButtonOnClick(object? sender, EventArgs e)
     {
-        if (HotkeyDefinition.TryParse(_hotkeyText.Text, out var hotkey, out var error))
+        if (!HotkeyDefinition.TryParse(_hotkeyText.Text, out var hotkey, out var error))
         {
-            _hotkeyText.Text = hotkey.DisplayText;
-            _errorLabel.Text = string.Empty;
+            _errorLabel.Text = $"普通快捷键：{error}";
+            DialogResult = DialogResult.None;
             return;
         }
 
-        _errorLabel.Text = error;
-        DialogResult = DialogResult.None;
+        if (!HotkeyDefinition.TryParse(_adminHotkeyText.Text, out var adminHotkey, out error))
+        {
+            _errorLabel.Text = $"管理员快捷键：{error}";
+            DialogResult = DialogResult.None;
+            return;
+        }
+
+        if (string.Equals(hotkey.DisplayText, adminHotkey.DisplayText, StringComparison.OrdinalIgnoreCase))
+        {
+            _errorLabel.Text = "普通快捷键和管理员快捷键不能相同。";
+            DialogResult = DialogResult.None;
+            return;
+        }
+
+        _hotkeyText.Text = hotkey.DisplayText;
+        _adminHotkeyText.Text = adminHotkey.DisplayText;
+        _errorLabel.Text = string.Empty;
     }
 
     private void HotkeyTextOnKeyDown(object? sender, KeyEventArgs e)
@@ -140,7 +169,11 @@ internal sealed class SettingsForm : Form
             return;
         }
 
-        _hotkeyText.Text = new HotkeyDefinition(modifiers, (uint)keyCode).DisplayText;
+        if (sender is TextBox textBox)
+        {
+            textBox.Text = new HotkeyDefinition(modifiers, (uint)keyCode).DisplayText;
+        }
+
         _errorLabel.Text = string.Empty;
     }
 }

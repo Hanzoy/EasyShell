@@ -9,6 +9,7 @@ internal sealed class AppConfig
     public string TerminalTargetId { get; set; } = TerminalTargets.PowerShellId;
     public TerminalKind Terminal { get; set; } = TerminalKind.PowerShell;
     public string Hotkey { get; set; } = "Ctrl+Space";
+    public string AdminHotkey { get; set; } = "Ctrl+Shift+Space";
     public bool StartWithWindows { get; set; }
 
     public static string ConfigDirectory =>
