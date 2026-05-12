@@ -19,6 +19,9 @@ internal static class TerminalLauncher
             case TerminalTargetKind.DirectPowerShell:
                 StartPowerShell(directory, asAdministrator);
                 break;
+            case TerminalTargetKind.DirectGitBash:
+                StartGitBash(target.ExecutablePath, directory, asAdministrator);
+                break;
             case TerminalTargetKind.WindowsTerminalDefault:
                 StartWindowsTerminal(directory, profileName: null, asAdministrator);
                 break;
@@ -45,6 +48,22 @@ internal static class TerminalLauncher
         {
             FileName = "powershell.exe",
             Arguments = $"-NoExit -NoLogo -Command Set-Location -LiteralPath {PowerShellQuote(directory)}",
+            WorkingDirectory = directory,
+            UseShellExecute = true
+        }, asAdministrator);
+    }
+
+    private static void StartGitBash(string? executablePath, string directory, bool asAdministrator)
+    {
+        if (string.IsNullOrWhiteSpace(executablePath) || !File.Exists(executablePath))
+        {
+            throw new InvalidOperationException("未找到 Git Bash。");
+        }
+
+        StartShell(new ProcessStartInfo
+        {
+            FileName = executablePath,
+            Arguments = $"-c \"cd {BashQuote(ToBashPath(directory))} && exec bash --login -i\"",
             WorkingDirectory = directory,
             UseShellExecute = true
         }, asAdministrator);
@@ -113,5 +132,15 @@ internal static class TerminalLauncher
     private static string PowerShellQuote(string value)
     {
         return $"'{value.Replace("'", "''")}'";
+    }
+
+    private static string ToBashPath(string value)
+    {
+        return value.Replace('\\', '/');
+    }
+
+    private static string BashQuote(string value)
+    {
+        return $"'{value.Replace("'", "'\\''")}'";
     }
 }

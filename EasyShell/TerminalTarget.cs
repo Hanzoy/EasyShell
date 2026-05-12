@@ -4,6 +4,7 @@ internal enum TerminalTargetKind
 {
     DirectCmd,
     DirectPowerShell,
+    DirectGitBash,
     WindowsTerminalDefault,
     WindowsTerminalProfile
 }
@@ -12,11 +13,12 @@ internal sealed record TerminalTarget(
     string Id,
     string DisplayName,
     TerminalTargetKind Kind,
-    string? ProfileName = null)
+    string? ProfileName = null,
+    string? ExecutablePath = null)
 {
     public string SourceLabel => Kind switch
     {
-        TerminalTargetKind.DirectCmd or TerminalTargetKind.DirectPowerShell => "直接启动",
+        TerminalTargetKind.DirectCmd or TerminalTargetKind.DirectPowerShell or TerminalTargetKind.DirectGitBash => "直接启动",
         TerminalTargetKind.WindowsTerminalDefault or TerminalTargetKind.WindowsTerminalProfile => "Windows Terminal",
         _ => string.Empty
     };
@@ -31,6 +33,7 @@ internal static class TerminalTargets
 {
     public const string CmdId = "direct:cmd";
     public const string PowerShellId = "direct:powershell";
+    public const string GitBashId = "direct:git-bash";
     public const string WindowsTerminalDefaultId = "wt:default";
 
     public static IReadOnlyList<TerminalTarget> GetAvailableTargets()
@@ -40,6 +43,12 @@ internal static class TerminalTargets
             new(CmdId, "cmd.exe", TerminalTargetKind.DirectCmd),
             new(PowerShellId, "powershell.exe", TerminalTargetKind.DirectPowerShell)
         };
+
+        var gitBashPath = GitBashDetector.FindBashPath();
+        if (!string.IsNullOrWhiteSpace(gitBashPath))
+        {
+            targets.Add(new(GitBashId, "Git Bash", TerminalTargetKind.DirectGitBash, ExecutablePath: gitBashPath));
+        }
 
         if (TerminalProfileScanner.IsWindowsTerminalAvailable())
         {
