@@ -21,6 +21,8 @@ dotnet run --project .\EasyShell\EasyShell.csproj
 
 ## 发布单文件 exe
 
+如果目标电脑已经安装 .NET 9 Windows Desktop Runtime，可以发布较小的框架依赖版本：
+
 ```powershell
 dotnet publish .\EasyShell\EasyShell.csproj -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
 ```
@@ -30,6 +32,23 @@ dotnet publish .\EasyShell\EasyShell.csproj -c Release -r win-x64 --self-contain
 ```text
 EasyShell\bin\Release\net9.0-windows\win-x64\publish\EasyShell.exe
 ```
+
+如果要发给没有安装 .NET 的电脑，发布自包含版本：
+
+```powershell
+dotnet publish .\EasyShell\EasyShell.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true
+```
+
+这个版本会把 .NET 运行时一起打包进 exe，文件更大，但可以直接运行。
+
+仓库里提供了统一发布脚本，会清理 `dist\` 后同时生成两个版本：
+
+```powershell
+.\publish-release.ps1
+```
+
+- `dist\runtime-required\EasyShell-v0.1.0-runtime-required.exe`：不带 .NET 运行时，文件较小，目标电脑需要安装 .NET 9 Windows Desktop Runtime
+- `dist\standalone\EasyShell-v0.1.0-standalone.exe`：自包含版本，文件较大，目标电脑不需要安装 .NET
 
 配置文件保存在：
 
