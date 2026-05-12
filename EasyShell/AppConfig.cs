@@ -6,6 +6,7 @@ internal sealed class AppConfig
 {
     private static readonly JsonSerializerOptions SerializerOptions = new() { WriteIndented = true };
 
+    public string TerminalTargetId { get; set; } = TerminalTargets.PowerShellId;
     public TerminalKind Terminal { get; set; } = TerminalKind.PowerShell;
     public string Hotkey { get; set; } = "Ctrl+Space";
     public bool StartWithWindows { get; set; }
@@ -25,7 +26,13 @@ internal sealed class AppConfig
             }
 
             var json = File.ReadAllText(ConfigPath);
-            return JsonSerializer.Deserialize<AppConfig>(json) ?? new AppConfig();
+            var config = JsonSerializer.Deserialize<AppConfig>(json) ?? new AppConfig();
+            if (string.IsNullOrWhiteSpace(config.TerminalTargetId))
+            {
+                config.TerminalTargetId = config.Terminal == TerminalKind.Cmd ? TerminalTargets.CmdId : TerminalTargets.PowerShellId;
+            }
+
+            return config;
         }
         catch
         {

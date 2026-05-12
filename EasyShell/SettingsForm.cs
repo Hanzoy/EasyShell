@@ -7,7 +7,7 @@ internal sealed class SettingsForm : Form
     private readonly CheckBox _startWithWindowsCheck = new();
     private readonly Label _errorLabel = new();
 
-    public TerminalKind Terminal => (TerminalKind)_terminalCombo.SelectedItem!;
+    public string TerminalTargetId => ((TerminalTarget)_terminalCombo.SelectedItem!).Id;
     public string HotkeyText => _hotkeyText.Text.Trim();
     public bool StartWithWindows => _startWithWindowsCheck.Checked;
 
@@ -19,7 +19,7 @@ internal sealed class SettingsForm : Form
         MinimizeBox = false;
         ShowInTaskbar = false;
         StartPosition = FormStartPosition.CenterScreen;
-        ClientSize = new Size(360, 218);
+        ClientSize = new Size(520, 218);
 
         var terminalLabel = new Label
         {
@@ -29,18 +29,15 @@ internal sealed class SettingsForm : Form
         };
 
         _terminalCombo.DropDownStyle = ComboBoxStyle.DropDownList;
-        _terminalCombo.Items.Add(TerminalKind.PowerShell);
-        _terminalCombo.Items.Add(TerminalKind.Cmd);
-        _terminalCombo.SelectedItem = config.Terminal;
+        _terminalCombo.DisplayMember = nameof(TerminalTarget.DisplayName);
+        _terminalCombo.ValueMember = nameof(TerminalTarget.Id);
+        var targets = TerminalTargets.GetAvailableTargets();
+        _terminalCombo.Items.AddRange(targets.Cast<object>().ToArray());
+        _terminalCombo.SelectedItem = targets.FirstOrDefault(target => string.Equals(target.Id, config.TerminalTargetId, StringComparison.OrdinalIgnoreCase))
+            ?? targets.First(target => target.Id == TerminalTargets.PowerShellId);
         _terminalCombo.Location = new Point(105, 18);
-        _terminalCombo.Width = 220;
-        _terminalCombo.Format += (_, e) =>
-        {
-            if (e.ListItem is TerminalKind terminal)
-            {
-                e.Value = terminal == TerminalKind.Cmd ? "cmd" : "PowerShell";
-            }
-        };
+        _terminalCombo.Width = 380;
+        _terminalCombo.DropDownWidth = 460;
 
         var hotkeyLabel = new Label
         {
@@ -62,13 +59,13 @@ internal sealed class SettingsForm : Form
         _errorLabel.AutoSize = false;
         _errorLabel.ForeColor = Color.Firebrick;
         _errorLabel.Location = new Point(105, 130);
-        _errorLabel.Size = new Size(220, 34);
+        _errorLabel.Size = new Size(380, 34);
 
         var saveButton = new Button
         {
             DialogResult = DialogResult.OK,
             Text = "保存",
-            Location = new Point(169, 176),
+            Location = new Point(329, 176),
             Size = new Size(75, 28)
         };
         saveButton.Click += SaveButtonOnClick;
@@ -77,7 +74,7 @@ internal sealed class SettingsForm : Form
         {
             DialogResult = DialogResult.Cancel,
             Text = "取消",
-            Location = new Point(250, 176),
+            Location = new Point(410, 176),
             Size = new Size(75, 28)
         };
 

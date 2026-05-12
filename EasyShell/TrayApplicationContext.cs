@@ -38,7 +38,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         try
         {
             var path = ExplorerPathResolver.GetForegroundExplorerPath();
-            TerminalLauncher.Launch(_config.Terminal, path);
+            TerminalLauncher.Launch(_config.TerminalTargetId, path);
         }
         catch (Exception ex)
         {
@@ -60,7 +60,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         var oldConfig = _config;
         _config = new AppConfig
         {
-            Terminal = form.Terminal,
+            TerminalTargetId = form.TerminalTargetId,
             Hotkey = form.HotkeyText,
             StartWithWindows = form.StartWithWindows
         };
