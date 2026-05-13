@@ -99,8 +99,18 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private void RegisterConfiguredHotkeys(bool showFailure, bool throwOnFailure = false)
     {
-        var hotkey = HotkeyDefinition.ParseOrDefault(_config.Hotkey);
-        var adminHotkey = HotkeyDefinition.ParseOrDefault(_config.AdminHotkey);
+        var hotkey = HotkeyDefinition.ParseOrDefault(_config.Hotkey, HotkeyDefinition.DefaultHotkey);
+        var adminHotkey = HotkeyDefinition.ParseOrDefault(_config.AdminHotkey, HotkeyDefinition.DefaultAdminHotkey);
+        if (hotkey.HasSameGesture(adminHotkey))
+        {
+            adminHotkey = HotkeyDefinition.DefaultAdminHotkey;
+        }
+
+        if (hotkey.HasSameGesture(adminHotkey))
+        {
+            hotkey = HotkeyDefinition.DefaultHotkey;
+        }
+
         _config.Hotkey = hotkey.DisplayText;
         _config.AdminHotkey = adminHotkey.DisplayText;
 

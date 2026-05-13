@@ -35,6 +35,21 @@ internal sealed class AppConfig
                 config.TerminalTargetId = config.Terminal == TerminalKind.Cmd ? TerminalTargets.CmdId : TerminalTargets.PowerShellId;
             }
 
+            if (string.IsNullOrWhiteSpace(config.Hotkey))
+            {
+                config.Hotkey = HotkeyDefinition.DefaultHotkey.DisplayText;
+            }
+
+            if (string.IsNullOrWhiteSpace(config.AdminHotkey))
+            {
+                config.AdminHotkey = HotkeyDefinition.DefaultAdminHotkey.DisplayText;
+            }
+
+            if (string.IsNullOrWhiteSpace(config.GitDirectoryTerminalTargetId))
+            {
+                config.GitDirectoryTerminalTargetId = TerminalTargets.GitBashId;
+            }
+
             return config;
         }
         catch

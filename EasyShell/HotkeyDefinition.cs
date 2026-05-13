@@ -117,7 +117,23 @@ internal sealed record HotkeyDefinition(HotkeyModifiers Modifiers, uint Key)
 
     public static HotkeyDefinition ParseOrDefault(string text)
     {
-        return TryParse(text, out var hotkey, out _) ? hotkey : new HotkeyDefinition(HotkeyModifiers.Control | HotkeyModifiers.NoRepeat, (uint)Keys.Space);
+        return ParseOrDefault(text, DefaultHotkey);
+    }
+
+    public static HotkeyDefinition ParseOrDefault(string text, HotkeyDefinition defaultHotkey)
+    {
+        return TryParse(text, out var hotkey, out _) ? hotkey : defaultHotkey;
+    }
+
+    public static HotkeyDefinition DefaultHotkey { get; } =
+        new(HotkeyModifiers.Control | HotkeyModifiers.NoRepeat, (uint)Keys.Space);
+
+    public static HotkeyDefinition DefaultAdminHotkey { get; } =
+        new(HotkeyModifiers.Control | HotkeyModifiers.Shift | HotkeyModifiers.NoRepeat, (uint)Keys.Space);
+
+    public bool HasSameGesture(HotkeyDefinition other)
+    {
+        return Key == other.Key && GetComparableModifiers(Modifiers) == GetComparableModifiers(other.Modifiers);
     }
 
     private static bool TryParseKey(string part, out Keys key)
@@ -202,5 +218,10 @@ internal sealed record HotkeyDefinition(HotkeyModifiers Modifiers, uint Key)
             >= Keys.F1 and <= Keys.F24 => $"F{key - Keys.F1 + 1}",
             _ => key.ToString()
         };
+    }
+
+    private static HotkeyModifiers GetComparableModifiers(HotkeyModifiers modifiers)
+    {
+        return modifiers & ~HotkeyModifiers.NoRepeat;
     }
 }

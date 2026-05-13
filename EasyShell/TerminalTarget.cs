@@ -64,7 +64,8 @@ internal static class TerminalTargets
 
     public static TerminalTarget Resolve(string id)
     {
-        return GetAvailableTargets().FirstOrDefault(target => string.Equals(target.Id, id, StringComparison.OrdinalIgnoreCase))
-            ?? GetAvailableTargets().First(target => target.Id == PowerShellId);
+        var targets = GetAvailableTargets();
+        return targets.FirstOrDefault(target => string.Equals(target.Id, id, StringComparison.OrdinalIgnoreCase))
+            ?? targets.First(target => target.Id == PowerShellId);
     }
 }

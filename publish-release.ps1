@@ -14,7 +14,8 @@ if ([string]::IsNullOrWhiteSpace($version)) {
 
 if (Test-Path $dist) {
     $resolvedDist = (Resolve-Path $dist).Path
-    if (-not $resolvedDist.StartsWith($root, [StringComparison]::OrdinalIgnoreCase)) {
+    $rootWithSeparator = $root.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+    if (-not $resolvedDist.StartsWith($rootWithSeparator, [StringComparison]::OrdinalIgnoreCase)) {
         throw "Refusing to delete outside workspace: $resolvedDist"
     }
 

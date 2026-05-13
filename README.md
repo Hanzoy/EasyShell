@@ -58,8 +58,8 @@ dotnet publish .\EasyShell\EasyShell.csproj -c Release -r win-x64 --self-contain
 .\publish-release.ps1
 ```
 
-- `dist\runtime-required\EasyShell-v1.1.1-runtime-required.exe`：不带 .NET 运行时，文件较小，目标电脑需要安装 .NET 9 Windows Desktop Runtime
-- `dist\standalone\EasyShell-v1.1.1-standalone.exe`：自包含版本，文件较大，目标电脑不需要安装 .NET
+- `dist\runtime-required\EasyShell-v1.1.2-runtime-required.exe`：不带 .NET 运行时，文件较小，目标电脑需要安装 .NET 9 Windows Desktop Runtime
+- `dist\standalone\EasyShell-v1.1.2-standalone.exe`：自包含版本，文件较大，目标电脑不需要安装 .NET
 
 配置文件保存在：
 
