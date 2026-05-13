@@ -10,6 +10,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     public TrayApplicationContext()
     {
         _config = AppConfig.Load();
+        SyncStartupRegistration();
 
         _notifyIcon = new NotifyIcon
         {
@@ -84,6 +85,23 @@ internal sealed class TrayApplicationContext : ApplicationContext
             _config = oldConfig;
             RegisterConfiguredHotkeys(showFailure: true, throwOnFailure: false);
             ShowError(ex.Message);
+        }
+    }
+
+    private void SyncStartupRegistration()
+    {
+        if (!_config.StartWithWindows)
+        {
+            return;
+        }
+
+        try
+        {
+            StartupManager.SetEnabled(enabled: true);
+        }
+        catch (Exception ex)
+        {
+            ShowError($"无法更新开机自启路径：{ex.Message}");
         }
     }
 
