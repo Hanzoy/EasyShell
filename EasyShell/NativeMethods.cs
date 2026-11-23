@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
 
 namespace EasyShell;
 
@@ -19,4 +20,12 @@ internal static class NativeMethods
 
     [DllImport("user32.dll")]
     public static extern IntPtr GetAncestor(IntPtr hWnd, uint gaFlags);
+
+    [DllImport("userenv.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool CreateEnvironmentBlock(out IntPtr environment, SafeAccessTokenHandle token, bool inherit);
+
+    [DllImport("userenv.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool DestroyEnvironmentBlock(IntPtr environment);
 }

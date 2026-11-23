@@ -1,11 +1,16 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Security.Principal;
 
 namespace EasyShell;
 
-internal static class TerminalLauncher
+internal sealed class TerminalLauncher
 {
-    public static void Launch(string terminalTargetId, string workingDirectory, bool asAdministrator = false)
+    private Dictionary<string, string> _previousWindowsEnvironment = ReadWindowsEnvironment() ?? [];
+
+    public void Launch(string terminalTargetId, string workingDirectory, bool asAdministrator = false)
     {
+        RefreshEnvironment();
         var directory = Directory.Exists(workingDirectory)
             ? workingDirectory
             : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -28,6 +33,65 @@ internal static class TerminalLauncher
             case TerminalTargetKind.WindowsTerminalProfile:
                 StartWindowsTerminal(directory, target.ProfileName, asAdministrator);
                 break;
+        }
+    }
+
+    private void RefreshEnvironment()
+    {
+        var current = ReadWindowsEnvironment();
+        if (current is null)
+        {
+            return;
+        }
+
+        // Remove deleted Windows variables while keeping variables inherited only by this process.
+        foreach (var name in _previousWindowsEnvironment.Keys)
+        {
+            if (!current.ContainsKey(name))
+            {
+                Environment.SetEnvironmentVariable(name, null);
+            }
+        }
+
+        foreach (var (name, value) in current)
+        {
+            if (Environment.GetEnvironmentVariable(name) != value)
+            {
+                Environment.SetEnvironmentVariable(name, value);
+            }
+        }
+
+        _previousWindowsEnvironment = current;
+    }
+
+    private static Dictionary<string, string>? ReadWindowsEnvironment()
+    {
+        using var identity = WindowsIdentity.GetCurrent(TokenAccessLevels.Query | TokenAccessLevels.Duplicate);
+        if (!NativeMethods.CreateEnvironmentBlock(out var block, identity.AccessToken, inherit: false))
+        {
+            return null;
+        }
+
+        try
+        {
+            var variables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var position = block;
+            while (Marshal.PtrToStringUni(position) is { Length: > 0 } entry)
+            {
+                var separator = entry.IndexOf('=');
+                if (separator > 0)
+                {
+                    variables[entry[..separator]] = entry[(separator + 1)..];
+                }
+
+                position += (entry.Length + 1) * sizeof(char);
+            }
+
+            return variables;
+        }
+        finally
+        {
+            NativeMethods.DestroyEnvironmentBlock(block);
         }
     }
 

@@ -5,6 +5,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private readonly NotifyIcon _notifyIcon;
     private readonly GlobalHotkey _hotkey = new();
     private readonly GlobalHotkey _adminHotkey = new();
+    private readonly TerminalLauncher _terminalLauncher = new();
     private AppConfig _config;
 
     public TrayApplicationContext()
@@ -43,7 +44,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         {
             var path = ExplorerPathResolver.GetForegroundExplorerPath();
             var terminalTargetId = ResolveTerminalTargetForPath(path);
-            TerminalLauncher.Launch(terminalTargetId, path, asAdministrator);
+            _terminalLauncher.Launch(terminalTargetId, path, asAdministrator);
         }
         catch (Exception ex)
         {
